@@ -52,8 +52,8 @@ def main():
     start = 10000000000
 
     # create random range count and number of threads    
-    range_count = random.randint(100000, 110000)
-    number_threads = random.randint(2, 10)
+    range_count = 100000
+    number_threads = 10
 
     numbers_processed = 0
     prime_count = 0
