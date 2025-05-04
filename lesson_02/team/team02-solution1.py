@@ -37,7 +37,7 @@ import threading
 from common import *
 
 # Include cse 351 common Python files
-from cse251 import *
+from cse351 import *
 
 # global
 call_count = 0
