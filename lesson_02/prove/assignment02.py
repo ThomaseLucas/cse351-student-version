@@ -30,8 +30,18 @@ def main():
     log.start_timer()
 
     bank = Bank()
+    bank.accounts = {}
 
-    # TODO - Add a ATM_Reader for each data file
+    threads = []
+
+    for filename in data_files:
+        threads.append(ATM_Reader(open(filename), bank))
+
+    for t in threads:
+        t.start()
+
+    for t in threads:
+        t.join()
 
     test_balances(bank)
 
@@ -39,23 +49,82 @@ def main():
 
 
 # ===========================================================================
-class ATM_Reader():
-    # TODO - implement this class here
-    ...
+class ATM_Reader(threading.Thread):
+    def __init__(self, file, bank):
+        super().__init__()
+        self.file = file
+        self.bank = bank
+
+    def run(self):
+        # This needs to be able to read each line of the file and then put each account number into the bank, then do withdrawls or deposits.
+
+        for line in self.file:
+
+            if line.startswith('#'):
+                 continue
+
+            print(line)
+            list_per_line = line.split(',')
+
+            account_id = list_per_line[0]
+            transaction_type = list_per_line[1]
+            amount_str = float(list_per_line[2].strip())
+
+            if account_id in self.bank.accounts:
+                if transaction_type == 'd':
+                    self.bank.accounts[account_id].deposit(amount_str)
+
+                elif transaction_type == 'w':
+                    self.bank.accounts[account_id].withdraw(amount_str)
+
+            else:
+                self.bank.accounts[account_id] = Account("0.00", account_id)
+                if transaction_type == 'd':
+                    self.bank.accounts[account_id].deposit(amount_str)
+
+                elif transaction_type == 'w':
+                    self.bank.accounts[account_id].withdraw(amount_str)
+
+    
+
+    
 
 
 # ===========================================================================
 class Account():
-    # TODO - implement this class here
-    ...
+    def __init__(self, balance, account_number):
+        self.balance = float(balance)
+        self.account_number = account_number    
 
+    def deposit(self, amount):
+        self.balance += amount
+        # return self.balance
+
+    def withdraw(self, amount):
+        self.balance -= amount
+        # return self.balance
+    
+    def get_balance(self):
+        return Money(f"{self.balance:.2f}")
+
+    
 
 # ===========================================================================
 class Bank():
-    # TODO - implement this class here
-    ...
+    def __init__(self):
+        self.accounts:Account = {}
 
+    def deposit(self, account, amount):
+        self.accounts[account].deposit(amount)
 
+    def withdraw(self, account, amount):
+        self.accounts[account].withdraw(amount)
+
+    def get_balance (self, account):
+        if str(account) in self.accounts:
+            return self.accounts[str(account)].get_balance()
+        else:
+            return Money("0.00") #This is definitely wrong lol
 # ---------------------------------------------------------------------------
 
 def get_filenames(folder):
