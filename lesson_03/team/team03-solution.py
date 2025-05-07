@@ -1,7 +1,7 @@
 """
 Course: CSE 351 
-Lesson: L02 team activity
-File:   team02-solution2.py
+Lesson: L03 team activity
+File:   W03team-solution.py
 Author: <Add name here>
 
 Purpose: Retrieve Star Wars details from a server
@@ -33,28 +33,21 @@ TODO
 
 from datetime import datetime, timedelta
 import threading
+import queue
 
 from common import *
 
 # Include cse 351 common Python files
 from cse351 import *
 
-CHAR = 'characters'
-PLAN = 'planets'
-STAR = 'starships'
-VEH = 'vehicles'
-SPEC = 'species'
-
 # global
+THREADS = 10
 call_count = 0
-
-results = {}            # <type, [names]>
 
 class GetUrl(threading.Thread):
 
-    def __init__(self, kind, url):
+    def __init__(self, url):
         threading.Thread.__init__(self)
-        self.kind = kind
         self.url = url
         self.name = ''
 
@@ -66,26 +59,17 @@ class GetUrl(threading.Thread):
         self.name = item['name']
 
 
-def get_urls(urls):
+def get_url(que):
     global call_count
-    global results
 
-    threads = []
-    for kind, url in urls:
-        t = GetUrl(kind, url)
+    while True:
         call_count += 1
-        t.start()
-        threads.append(t)
-    
-    for t in threads:
-        t.join()
+        url = que.get()
+        if url is None:
+            break
 
-    for t in threads:
-        kind = t.kind
-        if kind not in results:
-            results[kind] = [t.get_name()]
-        else:
-            results[kind].append(t.get_name())
+        data = get_data_from_server(url)
+        print(f'  - {data['name']}')
 
 
 def main():
@@ -96,31 +80,47 @@ def main():
 
     film6 = get_data_from_server(f'{TOP_API_URL}/films/6')
     call_count += 1
-    # print_dict(film6)
+    print_dict(film6)
 
-    all_urls = []           # list of tuples (type, url)
+    # Create shared queue
+    que = queue.Queue()
 
-    # Retrieve all
-    def _add_urls(t, all_urls, urls):
-        for url in urls:
-            all_urls.append((t, url))
+    # Create threads
+    threads = []
+    for i in range(THREADS):
+        t = threading.Thread(target=get_url, args=(que,))
+        threads.append(t)
 
-    _add_urls(CHAR, all_urls, film6['characters'])
-    _add_urls(PLAN, all_urls, film6['planets'])
-    _add_urls(STAR, all_urls, film6['starships'])
-    _add_urls(VEH,  all_urls, film6['vehicles'])
-    _add_urls(SPEC, all_urls, film6['species'])
+    # Start threads
+    for t in threads:
+        t.start()
 
-    get_urls(all_urls)
+    # fill queue with urls
 
-    for kind, names in results.items():
-        print(kind)
-        for name in names:
-            print(f'  - {name}')
+    for url in film6['characters']:
+        que.put(url)
+    
+    for url in film6['planets']:
+        que.put(url)
+    
+    for url in film6['starships']:
+        que.put(url)
+    
+    for url in film6['vehicles']:
+        que.put(url)
+    
+    for url in film6['species']:
+        que.put(url)
+
+    for i in range(THREADS):
+        que.put(None)
+    
+    # Join threads
+    for t in threads:
+        t.join()
 
     log.stop_timer('Total Time To complete')
     log.write(f'There were {call_count} calls to the server')
-
 
 if __name__ == "__main__":
     main()
