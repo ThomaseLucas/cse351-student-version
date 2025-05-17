@@ -128,10 +128,10 @@ class Handler(BaseHTTPRequestHandler):
             call_count += 1
             if thread_count > max_thread_count:
                 max_thread_count = thread_count
-            print(f'Current: active threads / max count: {thread_count} / {max_thread_count}')
+            # print(f'Current: active threads / max count: {thread_count} / {max_thread_count}')
             log.write(f'Current: active threads / max count: {thread_count} / {max_thread_count}')
 
-        print('- ' * 35)
+        # print('- ' * 35)
         print(s := f'Request: {self.path}')
         log.write(s)
 
@@ -289,7 +289,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-type",  "application/json")
             self.end_headers()
         else:
-            print('Sending:', json_data)
+            # print('Sending:', json_data)
             log.write(f'Sending: {json_data}')
 
             self.send_response(200)

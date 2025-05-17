@@ -56,41 +56,76 @@ class Queue351():
         return len(self.__items) + extra
 
 # ---------------------------------------------------------------------------
-def producer():
+def producer(q, filled, present, barrier):
     for i in range(PRIME_COUNT):
         number = random.randint(1, 1_000_000_000_000)
-        # TODO - place on queue for workers
-
-    # TODO - select one producer to send the "All Done" message
+        
+        filled.acquire()
+        q.put(number)
+        present.release()
+        
+    if barrier.wait() == 0:
+        q.put('All done')
+        present.release()
+        print('all done')
 
 # ---------------------------------------------------------------------------
-def consumer():
-    # TODO - get values from the queue and check if they are prime
-    # TODO - if prime, write to the file
-    # TODO - if "All Done" message, exit the loop
-    ...
+def consumer(q, filled, present):
+    while True:
+        present.acquire()
+        value = q.get()
+        filled.release()
 
+        if value == 'All done':
+            q.put('All done')
+            present.release()
+            break
+
+        if is_prime(value):
+                with open(FILENAME, 'a') as prime_f:
+                    prime_f.write(str(value))
+                    prime_f.write('\n')
 # ---------------------------------------------------------------------------
 def main():
+    with open(FILENAME, 'w'):
+        pass
 
     random.seed(102030)
 
     que = Queue351()
 
-    # TODO - create semaphores for the queue (see Queue351 class)
+    queue_filled = threading.Semaphore(MAX_QUEUE_SIZE)
 
-    # TODO - create barrier
+    anything_present = threading.Semaphore(0) # TODO Find out what this one is for
 
-    # TODO - create producers threads (see PRODUCERS value)
 
-    # TODO - create consumers threads (see CONSUMERS value)
+    producer_barrier = threading.Barrier(PRODUCERS)
+
+    p_threads = []
+    c_threads = []
+
+    for i in range(PRODUCERS):
+        t = threading.Thread(target=producer, args=(que, queue_filled, anything_present, producer_barrier))
+        p_threads.append(t)
+        t.start()
+
+    for i in range(CONSUMERS):
+        t = threading.Thread(target=consumer, args=(que, queue_filled, anything_present))
+        c_threads.append(t)
+        t.start()
+
+    for t in p_threads:
+        t.join()
+
+    for t in c_threads:
+        t.join()
 
     if os.path.exists(FILENAME):
         with open(FILENAME, 'r') as f:
             primes = len(f.readlines())
     else:
         primes = 0
-    print(f"Found {primes} primes.  Should be {108}.")
+    print(f"Found {primes} primes. Should be {108}.")
 
 
 

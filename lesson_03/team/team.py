@@ -35,6 +35,7 @@ TODO
 from datetime import datetime, timedelta
 import threading
 from common import *
+import queue
 
 # Include cse 351 common Python files
 from cse351 import *
@@ -42,15 +43,32 @@ from cse351 import *
 # global
 call_count = 0
 
-def get_urls(film6, kind):
+class GetUrl(threading.Thread):
+    def __init__(self, q):
+        super().__init__()
+        self.q = q
+        self.item = None
+
+    def run(self):
+        url = self.q.get()
+
+        self.item = get_data_from_server(url)
+
+
+    def get_name(self):
+        return self.item['name']
+        
+
+def get_urls(film6, kind, q):
     global call_count
 
     urls = film6[kind]
     print(kind)
     for url in urls:
         call_count += 1
-        item = get_data_from_server(url)
-        print(f'  - {item['name']}')
+        q.put(url)
+
+        
 
 def main():
     global call_count
@@ -63,11 +81,34 @@ def main():
     print_dict(film6)
 
     # Retrieve people
-    get_urls(film6, 'characters')
-    get_urls(film6, 'planets')
-    get_urls(film6, 'starships')
-    get_urls(film6, 'vehicles')
-    get_urls(film6, 'species')
+
+    
+
+
+    q = queue.Queue()
+
+    get_urls(film6, 'characters', q)
+    get_urls(film6, 'planets', q)
+    get_urls(film6, 'starships', q)
+    get_urls(film6, 'vehicles', q)
+    get_urls(film6, 'species', q)
+
+    q.put(None)
+
+    threads = []
+
+    while True:
+        if q.get() == None:
+            break
+        else:
+            t = GetUrl(q)
+            threads.append(t)
+            t.start()
+
+    for thread in threads:
+        thread.join()
+        print(thread.get_name())
+
 
     log.stop_timer('Total Time To complete')
     log.write(f'There were {call_count} calls to the server')

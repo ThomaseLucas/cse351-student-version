@@ -63,7 +63,7 @@ class ATM_Reader(threading.Thread):
             if line.startswith('#'):
                  continue
 
-            # print(line)x  
+            # print(line)
             list_per_line = line.split(',')
 
             account_id = list_per_line[0]
