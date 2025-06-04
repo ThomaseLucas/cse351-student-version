@@ -24,6 +24,8 @@ import time
 # Include cse 351 common Python files
 from cse351 import *
 
+PROCESSES = 6
+
 words = ['BOOKMARK', 'SURNAME', 'RETHINKING', 'HEAVY', 'IRONCLAD', 'HAPPY', 
         'JOURNAL', 'APPARATUS', 'GENERATOR', 'WEASEL', 'OLIVE', 
         'LINING', 'BAGGAGE', 'SHIRT', 'CASTLE', 'PANEL', 
@@ -138,9 +140,10 @@ class Board():
         print(f'Finding {word}...')
         for row in range(self.size):
             for col in range(self.size):
-                for d in range(0, 8):
-                    if self._word_at_this_location(row, col, d, word):
-                        return True
+                if self.get_letter(row,col) == word[0]:
+                    for d in range(0, 8):
+                        if self._word_at_this_location(row, col, d, word):
+                            return True
         return False
 
 
@@ -152,6 +155,11 @@ def main():
     for word in words:
         if not board.find_word(word):
             print(f'Error: Could not find "{word}"')
+
+
+    # with mp.Pool(PROCESSES) as p:
+    #     p.map(board.find_word, words)
+
     
     total_time = time.perf_counter() - start
 

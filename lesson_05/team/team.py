@@ -33,26 +33,46 @@ def is_prime(n):
     return True
 
 def main():
+    global PROCESSES
     log = Log(show_terminal=True)
     log.start_timer()
+
+    print(f'{mp.cpu_count()} CPU COUNT')
 
     xaxis_cpus = []
     yaxis_times = []
 
-    start_time = time.time()
+    
 
     start = 10000000000
     range_count = 100000
     numbers_processed = 0
-    for i in range(start, start + range_count):
-        numbers_processed += 1
-        if is_prime(i):
-            prime_count += 1
-            print(i, end=', ', flush=True)
+    list_of_all_numbers = [i for i in range(start, start + range_count)]
+    
     print(flush=True)
 
-    end_time = time.time()
-    elapsed_time = end_time - start_time
+    
+    PROCESSES = 1
+    while PROCESSES <= mp.cpu_count():
+        start_time = time.time()
+        p = mp.Pool(PROCESSES)
+
+        with p:
+            p.map(is_prime, list_of_all_numbers)
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
+        xaxis_cpus.append(PROCESSES)
+        yaxis_times.append(elapsed_time)
+
+        print(f'Processes done: {PROCESSES} Time elapsed: {elapsed_time}')
+
+        PROCESSES += 1
+
+
+
+    
 
     # create plot of results and also save it to a PNG file
     plt.plot(xaxis_cpus, yaxis_times)
